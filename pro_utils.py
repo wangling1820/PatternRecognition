@@ -100,7 +100,10 @@ def hsv_feature(image_path):
 
 if __name__ == "__main__":
     # image2fea()
-    image2fea(folder='./unknown/', feas_dir='./RGB/unknown_feas.npy', labels_dir='./RGB/unknown_labels.npy')
+    image2fea(folder='./unknown/', feas_dir='./HSV/unknown_feas.npy', 
+        labels_dir='./HSV/unknown_labels.npy', feature_extractor=hsv_feature)
+    image2fea(folder='./known/', feas_dir='./HSV/known_feas.npy', 
+        labels_dir='./HSV/known_labels.npy', feature_extractor=hsv_feature)
     # gen_info('./known', info='./info/known.txt')
     # gen_info(folder='./unknown', info='./info/unknown.txt')
     # print("hello world")

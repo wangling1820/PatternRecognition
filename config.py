@@ -1,0 +1,1 @@
+TYPE = ['RGB', 'HSV', 'GoogleNet', 'VGG', 'DeepLearning']
