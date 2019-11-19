@@ -3,12 +3,11 @@ import cv2
 import operator
 import numpy as np
 from scipy.spatial.distance import cdist
-from config import TYPE
 class base(object):
     def __init__(self, type):
         self.unknown_folder = './unknown/'
         self.known_folder = './known/'
-
+        TYPE = ['RGB', 'HSV', 'GoogleNet', 'VGG', 'DeepLearning']
         if type not in TYPE:
             raise RuntimeError('classified_by_tradition:输入的参数:type无效!')
         self.type = type
@@ -37,7 +36,6 @@ class base(object):
             dis = cdist(np.expand_dims(unknown_fea, axis=0), self.known_feas, metric='euclidean')[0]
             distance.append(dis)
         self.distances = np.stack(distance)
-
 
     def classify_by_knn(self, K=5): 
         error_cnt = 0.0

@@ -5,6 +5,7 @@ import numpy as np
 
 from sklearn import preprocessing
 from scipy.spatial.distance import cdist
+
 from base import base
 
 
@@ -12,7 +13,6 @@ class ClassifiedByPixels(base):
     def __init__(self, type):
         super().__init__(type)
         
-
     def rgb_feature(self, image_path):
         """
         计算图像的RGB颜色直方图,并经过归一化和平滑处理生成一个特征向量.

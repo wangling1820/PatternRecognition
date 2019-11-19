@@ -1,8 +1,10 @@
 import os
 import numpy as np
+
 from keras.models import Model, load_model 
 from keras.applications import vgg16, inception_v3
 from keras.preprocessing import image
+
 from base import base
 
 class ClassifiedByDeepLearning(base):
@@ -85,6 +87,9 @@ class ClassifiedByDeepLearning(base):
                     feas_dir=self.unknown_feas_dir, labels_dir=self.unknown_labels_dir,feature_extractor=self.vgg_feature)
         else:
             raise RuntimeError('输入的特征类别有误!')
+    
+     def get_all_distance_by_euclidean(self):
+        super().get_all_distance()
 
 def test_vgg(first=False):
     test = ClassifiedByDeepLearning('VGG')
