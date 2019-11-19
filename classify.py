@@ -8,24 +8,10 @@ from scipy.spatial.distance import cdist
 from base import base
 
 
-class ClassifiedByPixels(object):
+class ClassifiedByPixels(base):
     def __init__(self, type):
-        self.unknown_folder = './unknown/'
-        self.known_folder = './known/'
-        type_list = ['RGB', 'HSV', 'GoogleNet', 'VGG']
-        if type not in type_list:
-            raise RuntimeError('classified_by_tradition:输入的参数:type无效!')
-        self.type = type
-        self.root_dir = os.path.join(os.getcwd(), type)
-
-        if not os.path.isdir(self.root_dir):
-            os.mkdir(self.root_dir)
-
-        self.unknown_feas_dir = os.path.join(self.root_dir, 'unknown_feas.npy')
-        self.unknown_labels_dir = os.path.join(self.root_dir, 'unknown_labels.npy')
-
-        self.known_feas_dir = os.path.join(self.root_dir, 'known_feas.npy')
-        self.known_labels_dir = os.path.join(self.root_dir, 'known_labels.npy')
+        super().__init__(type)
+        
 
     def rgb_feature(self, image_path):
         """
@@ -117,99 +103,102 @@ class ClassifiedByPixels(object):
         else:
             raise RuntimeError('输入的特征类别有误!')
 
-    def load_feas(self):
-        self.known_feas = np.load(self.known_feas_dir)
-        self.known_labels = np.load(self.known_labels_dir)
-        self.unknown_feas = np.load(self.unknown_feas_dir)
-        self.unknown_labels = np.load(self.unknown_labels_dir)
 
+    def get_hist_distance(self, unknown_fea, knwon_feas):
+        """
+        相关性比较 (method=cv.HISTCMP_CORREL) 值越大，相关度越高，最大值为1，最小值为0
+        卡方比较(method=cv.HISTCMP_CHISQR 值越小，相关度越高，最大值无上界，最小值0
+        巴氏距离比较(method=cv.HISTCMP_BHATTACHARYYA) 值越小，相关度越高，最大值为1，最小值为0
+        """
+        distance = []
+        for known_fea in knwon_feas:
+            # dist = -cv2.compareHist(unknown_fea, known_fea, cv2.HISTCMP_CORREL)  # 取相反数便于计算
+            dist = cv2.compareHist(unknown_fea, known_fea, cv2.HISTCMP_BHATTACHARYYA) 
+            distance.append(dist)
+        return np.array(distance)
 
     def get_all_distance(self):
         distance = []
         for unknown_fea in self.unknown_feas:
-            dis = cdist(np.expand_dims(unknown_fea, axis=0), self.known_feas, metric='euclidean')[0]
+            dis = self.get_hist_distance(unknown_fea, self.known_feas)
             distance.append(dis)
         self.distances = np.stack(distance)
 
 
-    def classify_by_knn(self, K=5): 
-        error_cnt = 0.0
-        for index, dis in zip(range(len(self.unknown_labels)), self.distances):
-            sorted_dis_indices = dis.argsort()
-            class_cnt = {}
-            for i in range(K):
-                classLabel = self.known_labels[sorted_dis_indices[i]]
-                class_cnt[classLabel] = class_cnt.get(classLabel, 0) + 1
-            sorted_class_cnt = sorted(class_cnt.items(), key=operator.itemgetter(1), reverse=True)
-            predicted_label = sorted_class_cnt[0][0]
-            if predicted_label != self.unknown_labels[index]:
-                error_cnt += 1.0
-        error_ratio = error_cnt / len(self.unknown_labels)
-        return error_ratio
-
-    def classify(self, K=[1, 5, 10, 15, 20]):
-        self.error_ratio = {}
-        for k in K:
-            self.error_ratio[k] = self.classify_by_knn(K=k)
-
-    def evaluting(self):
-        for key in self.error_ratio.keys():
-            print('K = %d 时的分类错误率为 %0.4f'%(key, self.error_ratio[key]), end=' ')
-            print('K = %d 时的分类正确率为 %0.4f'%(key, 1 - self.error_ratio[key]))
-
-
-if __name__ == "__main__":
+def test_hsv(first=False):
     test = ClassifiedByPixels('HSV')
-    test.image2features()
+    if first:
+        test.image2features()
+    else:
+        test.load_feas()
     test.get_all_distance()
     test.classify()
     test.evaluting()
-    # test = classified_by_tradition('RGB')
-    # test.load_info()
-    # test.get_all_distance()
-    # test.classify()
-    # test.evaluting()
-    # test1 = classified_by_tradition('HSV')
-    # test1.load_info()
-    # test1.get_all_distance()
-    # test1.classify()
-    # test1.evaluting()
-    # dd = os.path.join(os.getcwd(), 'hello')
-    # if not os.path.isdir(dd):
-    #     print('bucunzai ' + dd)
-    #     os.mkdir(dd)
-    # dc = os.path.join(dd, 'dd')
-    # a = np.array([1,1,1])
-    # np.save(dc, a)
-    # a = np.load('/home/wangling/faceImages/project/RGB/known_feas.npy')
-    # b = np.load('/home/wangling/faceImages/project/RGB/unknown_feas.npy')
-    # al = np.load('/home/wangling/faceImages/project/RGB/known_labels.npy')
-    # bl = np.load('/home/wangling/faceImages/project/RGB/unknown_labels.npy')
-    # dis = get_all_distance(a, b)
-    # error_ratio = classify_by_knn(dis, al, bl)
-    # print(error_ratio)
 
-    # a = np.load('/home/wangling/faceImages/project/HSV/known_feas.npy')
-    # b = np.load('/home/wangling/faceImages/project/HSV/unknown_feas.npy')
-    # al = np.load('/home/wangling/faceImages/project/HSV/known_labels.npy')
-    # bl = np.load('/home/wangling/faceImages/project/HSV/unknown_labels.npy')
-    # dis = get_all_distance(a, b)
-    # error_ratio = classify_by_knn(dis, al, bl)
-    # print(error_ratio)
-    # data = preprocessing.minmax_scale(a, feature_range=(0, 1), axis=0, copy=True)
-    # data = autoNorm(a)
-    # print(data)
-    # [wangling@Manjaro project]$ python classified_by_tradition.py 
-    # 0.8369565217391305
-    # 0.8152173913043478
+def test_rgb(first=False):
+    test = ClassifiedByPixels('RGB')
+    if first:
+        test.image2features()
+    else:
+        test.load_feas()
+    test.get_all_distance()
+    test.classify()
+    test.evaluting()
+if __name__ == "__main__":
+    test_rgb()
+    test_hsv()
+    """
+    rgb and cv2.HISTCMP_BHATTACHARYYA
+    K = 1 时的分类错误率为 0.7101 K = 1 时的分类正确率为 0.2899
+    K = 5 时的分类错误率为 0.7645 K = 5 时的分类正确率为 0.2355
+    K = 10 时的分类错误率为 0.8152 K = 10 时的分类正确率为 0.1848
+    K = 15 时的分类错误率为 0.8370 K = 15 时的分类正确率为 0.1630
+    K = 20 时的分类错误率为 0.8225 K = 20 时的分类正确率为 0.1775
 
-    # image2fea()
-    # labels = np.load('./RGB/unknown_labels.npy')
-    # print(labels)
-    # image = cv2.imread('/home/wangling/faceImages/project/unknown/i000qa-fn.jpg')
-    # cv2.imshow('hello', image)
-    # print(image.shape)
-    # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # print(image.shape)
-    # cv2.imshow('world', image)
-    # cv2.waitKey(0)
+    hsv and cv2.HISTCMP_BHATTACHARYYA
+    K = 1 时的分类错误率为 0.6558 K = 1 时的分类正确率为 0.3442
+    K = 5 时的分类错误率为 0.6739 K = 5 时的分类正确率为 0.3261
+    K = 10 时的分类错误率为 0.6522 K = 10 时的分类正确率为 0.3478
+    K = 15 时的分类错误率为 0.6558 K = 15 时的分类正确率为 0.3442
+    K = 20 时的分类错误率为 0.6775 K = 20 时的分类正确率为 0.3225
+
+    rgb hsv and euclidean
+    K = 1 时的分类错误率为 0.8478 K = 1 时的分类正确率为 0.1522
+    K = 5 时的分类错误率为 0.8370 K = 5 时的分类正确率为 0.1630
+    K = 10 时的分类错误率为 0.8841 K = 10 时的分类正确率为 0.1159
+    K = 15 时的分类错误率为 0.8768 K = 15 时的分类正确率为 0.1232
+    K = 20 时的分类错误率为 0.8768 K = 20 时的分类正确率为 0.1232
+
+    K = 1 时的分类错误率为 0.8152 K = 1 时的分类正确率为 0.1848
+    K = 5 时的分类错误率为 0.8152 K = 5 时的分类正确率为 0.1848
+    K = 10 时的分类错误率为 0.8297 K = 10 时的分类正确率为 0.1703
+    K = 15 时的分类错误率为 0.8333 K = 15 时的分类正确率为 0.1667
+    K = 20 时的分类错误率为 0.8370 K = 20 时的分类正确率为 0.1630
+
+    rgb hsv and HISTCMP_CHISQR
+    K = 1 时的分类错误率为 0.7029 K = 1 时的分类正确率为 0.2971
+    K = 5 时的分类错误率为 0.7826 K = 5 时的分类正确率为 0.2174
+    K = 10 时的分类错误率为 0.8188 K = 10 时的分类正确率为 0.1812
+    K = 15 时的分类错误率为 0.8043 K = 15 时的分类正确率为 0.1957
+    K = 20 时的分类错误率为 0.8116 K = 20 时的分类正确率为 0.1884
+
+    K = 1 时的分类错误率为 0.6812 K = 1 时的分类正确率为 0.3188
+    K = 5 时的分类错误率为 0.7210 K = 5 时的分类正确率为 0.2790
+    K = 10 时的分类错误率为 0.7609 K = 10 时的分类正确率为 0.2391
+    K = 15 时的分类错误率为 0.7790 K = 15 时的分类正确率为 0.2210
+    K = 20 时的分类错误率为 0.7790 K = 20 时的分类正确率为 0.2210
+
+    rgb and hsv HISTCMP_CORREL
+    K = 1 时的分类错误率为 0.8478 K = 1 时的分类正确率为 0.1522
+    K = 5 时的分类错误率为 0.8442 K = 5 时的分类正确率为 0.1558
+    K = 10 时的分类错误率为 0.8804 K = 10 时的分类正确率为 0.1196
+    K = 15 时的分类错误率为 0.8696 K = 15 时的分类正确率为 0.1304
+    K = 20 时的分类错误率为 0.8804 K = 20 时的分类正确率为 0.1196
+
+    K = 1 时的分类错误率为 0.8152 K = 1 时的分类正确率为 0.1848
+    K = 5 时的分类错误率为 0.8225 K = 5 时的分类正确率为 0.1775
+    K = 10 时的分类错误率为 0.8261 K = 10 时的分类正确率为 0.1739
+    K = 15 时的分类错误率为 0.8333 K = 15 时的分类正确率为 0.1667
+    K = 20 时的分类错误率为 0.8406 K = 20 时的分类正确率为 0.1594
+    """
+ 

@@ -9,7 +9,8 @@ class ClassifiedByDeepLearning(base):
     def __init__(self, type):
         super().__init__(type)
         if self.type == 'GoogleNet':
-            self.model_path = './weights/GoogleNet.h5'
+            # self.model_path = './weights/GoogleNet.h5'
+            self.model_path = './weights/GoogLeNet.h5'
             self.layer_name = 'Avg_Pooling'
         elif self.type == 'VGG':
             self.model_path = './weights/VGG.h5'
@@ -85,24 +86,44 @@ class ClassifiedByDeepLearning(base):
         else:
             raise RuntimeError('输入的特征类别有误!')
 
-def test_vgg():
+def test_vgg(first=False):
     test = ClassifiedByDeepLearning('VGG')
-    test.get_model()
-    test.image2features()
+    if first:
+        test.get_model()
+        test.image2features()
+    else:
+        test.load_feas()
     test.get_all_distance()
     test.classify()
     test.evaluting()
 
 
-def test_googlenet():
+def test_googlenet(first=False):
     test = ClassifiedByDeepLearning('GoogleNet')
-    test.get_model()
-    test.image2features()
+    if first:
+        test.get_model()
+        test.image2features()
+    else:
+        test.load_feas()
     test.get_all_distance()
     test.classify()
     test.evaluting()
 
 if __name__ == '__main__':
-    test_googlenet()
-    test_vgg()
+    test_googlenet(False)
+    test_vgg(False)
+
+    """
+    google and vgg
+    K = 1 时的分类错误率为 0.0036 K = 1 时的分类正确率为 0.9964
+    K = 5 时的分类错误率为 0.0000 K = 5 时的分类正确率为 1.0000
+    K = 10 时的分类错误率为 0.0000 K = 10 时的分类正确率为 1.0000
+    K = 15 时的分类错误率为 0.0109 K = 15 时的分类正确率为 0.9891
+    K = 20 时的分类错误率为 0.0290 K = 20 时的分类正确率为 0.9710
+    K = 1 时的分类错误率为 0.0181 K = 1 时的分类正确率为 0.9819
+    K = 5 时的分类错误率为 0.0362 K = 5 时的分类正确率为 0.9638
+    K = 10 时的分类错误率为 0.0507 K = 10 时的分类正确率为 0.9493
+    K = 15 时的分类错误率为 0.0761 K = 15 时的分类正确率为 0.9239
+    K = 20 时的分类错误率为 0.0833 K = 20 时的分类正确率为 0.9167
+    """
     
