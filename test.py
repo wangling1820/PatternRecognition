@@ -1,16 +1,17 @@
 import os
+import time
 import numpy as np
 from keras.models import Model, load_model 
 from keras.applications import vgg16, inception_v3
 from keras.preprocessing import image
-path = '/home/wangling/faceImages/project/weights/vgg16.h5'
-in_path = '/home/wangling/faceImages/project/weights/GoogleNet.h5'
-inception = '/home/wangling/faceImages/project/weights/GoogLeNet_Max_01.h5'
-base_model = load_model(in_path)
-base_model.summary()
-# base_model = load_model(path)
-# model = Model(input=base_model.input, output=base_model.get_layer('fc2').output)
-# model.summary()
+# path = '/home/wangling/faceImages/project/weights/vgg16.h5'
+# in_path = '/home/wangling/faceImages/project/weights/GoogleNet.h5'
+# inception = '/home/wangling/faceImages/project/weights/GoogLeNet_Max_01.h5'
+# base_model = load_model(in_path)
+# base_model.summary()
+# # base_model = load_model(path)
+# # model = Model(input=base_model.input, output=base_model.get_layer('fc2').output)
+# # model.summary()
 
 def get_model(model_path, layer_name):
     base_model = load_model(path)
@@ -26,9 +27,5 @@ def get_feas(image_path, model):
     fea = model.predict(img)[0]            # [[2,2,2,2]] --> [2, 2, 2, 2]
     return fea
 
-# if __name__ == '__main__':
-#     # path = '/home/wangling/faceImages/project/weights/vgg16.h5'
-#     # image_path = '/home/wangling/faceImages/project/unknown/i000qa-fn.jpg'
-#     # model = get_model(path, 'fc2')
-#     # fe = get_feas(image_path, model) # 
-#     # print(fe)
+if __name__ == '__main__':
+    print(time.strftime("%m-%d-%H-%M-%S", time.localtime()) )

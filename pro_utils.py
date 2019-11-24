@@ -98,12 +98,53 @@ def hsv_feature(image_path):
     return np.array(hsv)
 
 
+def get_labels(known_labels='./FullyCon/known_labels.npy', unknown_labels='./FullyCon/unknown_labels.npy'):
+    known_labels = np.load(known_labels)
+    unknown_labels = np.load(unknown_labels)
+
+    index = 0
+    hash_map = {}
+    known_list = []
+    unknown_list = []
+
+    for label in known_labels:
+        if label not in hash_map.keys():
+            hash_map[label] = index
+            index += 1
+        known_list.append(hash_map[label])
+
+    for label in unknown_labels:
+        if label not in hash_map.keys():
+            raise RuntimeError('%d is not found', label)
+        unknown_list.append(hash_map[label])
+    
+    known_labels = np.array(known_list)
+    unknown_labels = np.array(unknown_list)
+    return known_labels, unknown_labels
+
+
 if __name__ == "__main__":
-    # image2fea()
-    image2fea(folder='./unknown/', feas_dir='./HSV/unknown_feas.npy', 
-        labels_dir='./HSV/unknown_labels.npy', feature_extractor=hsv_feature)
-    image2fea(folder='./known/', feas_dir='./HSV/known_feas.npy', 
-        labels_dir='./HSV/known_labels.npy', feature_extractor=hsv_feature)
-    # gen_info('./known', info='./info/known.txt')
-    # gen_info(folder='./unknown', info='./info/unknown.txt')
-    # print("hello world")
+    known_labels = np.load('./FullyCon/known_labels.npy')
+    unknown_labels = np.load('./FullyCon/unknown_labels.npy')
+
+    index = 1
+    hash_map = {}
+    known_list = []
+    unknown_list = []
+
+    for label in known_labels:
+        if label not in hash_map.keys():
+            hash_map[label] = index
+            index += 1
+        known_list.append(hash_map[label])
+
+    for label in unknown_labels:
+        if label not in hash_map.keys():
+            raise RuntimeError('%d is not found', label)
+        unknown_list.append(hash_map[label])
+    
+    known_labels = np.array(known_list)
+    unknown_labels = np.array(unknown_list)
+ 
+    
+    

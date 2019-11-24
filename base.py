@@ -7,7 +7,7 @@ class base(object):
     def __init__(self, type):
         self.unknown_folder = './unknown/'
         self.known_folder = './known/'
-        TYPE = ['RGB', 'HSV', 'GoogleNet', 'VGG', 'DeepLearning']
+        TYPE = ['RGB', 'HSV', 'GoogleNet', 'VGG', 'FC']
         if type not in TYPE:
             raise RuntimeError('classified_by_tradition:输入的参数:type无效!')
         self.type = type
@@ -37,6 +37,7 @@ class base(object):
             distance.append(dis)
         self.distances = np.stack(distance)
 
+
     def classify_by_knn(self, K=5): 
         error_cnt = 0.0
         for index, dis in zip(range(len(self.unknown_labels)), self.distances):
@@ -52,19 +53,15 @@ class base(object):
         error_ratio = error_cnt / len(self.unknown_labels)
         return error_ratio
 
+
     def classify(self, K=[1, 5, 10, 15, 20]):
         self.error_ratio = {}
         for k in K:
             self.error_ratio[k] = self.classify_by_knn(K=k)
+
 
     def evaluting(self):
         for key in self.error_ratio.keys():
             print('K = %d 时的分类错误率为 %0.4f'%(key, self.error_ratio[key]), end=' ')
             print('K = %d 时的分类正确率为 %0.4f'%(key, 1 - self.error_ratio[key]))
 
-if __name__ == "__main__":
-    b = base('RGB')
-    b.load_feas()
-    b.get_all_distance()
-    b.classify()
-    b.evaluting()
