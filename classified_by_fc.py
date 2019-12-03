@@ -2,23 +2,29 @@ import os
 import time
 
 import numpy as np
+
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from keras.models import load_model 
+from keras import optimizers
+from keras.layers import Dropout
+
 
 from base import base
-from pro_utils import get_labels
+from classified_by_models import ClassifiedByModels
 
 class ClassifiedByFC(base):
     def __init__(self, type):
         super().__init__(type)
-        fig_name_acc = time.strftime("%m-%d-%H-%M-%S", time.localtime()) + '_acc.png'
-        fig_name_loss = time.strftime("%m-%d-%H-%M-%S", time.localtime()) + '_loss.png'
+        time_string = time.strftime("%m-%d-%H-%M-%S", time.localtime())
+        model_name = self.type + time_string
+        fig_name_acc = time_string + '_acc.png'
+        fig_name_loss = time_string + '_loss.png'
         self.tainning_acc_fig = os.path.join(self.root_dir, fig_name_acc)
         self.tainning_loss_fig = os.path.join(self.root_dir, fig_name_loss)
-        self.model_path = os.path.join(self.root_dir, 'model_saved')
+        self.model_path = os.path.join(self.root_dir, model_name)
 
     def continuous_labels(self, known_labels, unknown_labels):
         index = 0
@@ -43,37 +49,52 @@ class ClassifiedByFC(base):
 
 
     def load_feas(self):
-        super().load_feas()
-        self.known_labels, self.unknown_labels = self.continuous_labels(self.known_labels, self.unknown_labels)
-        self.known_labels = to_categorical(self.known_labels)
-        self.unknown_labels = to_categorical(self.unknown_labels)
+        if os.path.exists(self.known_feas_dir) and os.path.exists(self.known_labels_dir) and os.path.exists(self.unknown_feas_dir) and os.path.exists(self.unknown_labels_dir):
+            super().load_feas()
+            self.known_labels, self.unknown_labels = self.continuous_labels(self.known_labels, self.unknown_labels)
+            self.known_labels = to_categorical(self.known_labels)
+            self.unknown_labels = to_categorical(self.unknown_labels)
+        else:
+            raise RuntimeError('无法获得特征文件, 使用classified_by_models提取特征.')
 
 
     def get_model(self):
         self.model = Sequential()
-        self.model.add(Dense(512, input_dim=2048, activation='relu'))
-        self.model.add(Dense(276, activation='softmax'))
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        self.model.summary()
+        if self.type is 'VGGFC':
+            self.model.add(Dense(1024, input_dim=4096, activation='relu'))
+            self.model.add(Dropout(0.4))
+            self.model.add(Dense(276, activation='softmax'))
+            sgd = optimizers.SGD(lr=0.001, decay=1e-4, momentum=0.9, nesterov=True)
+            self.model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+            self.model.summary()
+        elif self.type is 'GoogLeNetFC':
+            self.model.add(Dense(512, input_dim=2048, activation='relu'))
+            self.model.add(Dense(276, activation='softmax'))
+            self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            self.model.summary()
 
 
-    def train_model(self, epochs=30, batch_size=32, validation_split=0.1):
-        self.history = self.model.fit(x=self.known_feas, y=self.known_labels, 
-            batch_size=batch_size,epochs=epochs, validation_split=validation_split, shuffle=True)
-    
+    def train_model(self, epochs=10, batch_size=8, validation_split=0.1):
+        if self.type is 'GoogLeNet':
+            self.history = self.model.fit(x=self.known_feas, y=self.known_labels, 
+                batch_size=8, epochs=10, validation_split=0.1, shuffle=True)
+        else:
+            self.history = self.model.fit(x=self.known_feas, y=self.known_labels, 
+                batch_size=32, epochs=10, validation_split=0.1, shuffle=True)
 
-    def classfiy(self):
+
+    def classifiy(self):
         self.scores = self.model.evaluate(x=self.unknown_feas, y=self.unknown_labels, batch_size=32, verbose=1)
 
 
     def evaluting(self):
         print("图像分类的%s: %.2f%%" % (self.model.metrics_names[1], self.scores[1]*100))
-        if self.scores[1] == 1:
+        if self.scores[1] >= 0.99:
             self.model.save(self.model_path)
 
 
-    def load_model(self):
-        self.model = load_model(self.model_path)
+    def load_model(self, model_weight):
+        self.model = load_model(model_weight)
 
 
     def train_acc_info(self):
@@ -84,7 +105,7 @@ class ClassifiedByFC(base):
         plt.grid(True)
         plt.grid(color='r', alpha=0.4, linestyle='--')
         plt.title('accuracy')
-        plt.show()
+        # plt.show()
         plt.savefig(self.tainning_acc_fig)
 
 
@@ -96,7 +117,7 @@ class ClassifiedByFC(base):
         plt.grid(True)
         plt.grid(color='r', alpha=0.4, linestyle='--')
         plt.title('loss')
-        plt.show() 
+        # plt.show() 
         plt.savefig(self.tainning_loss_fig)
 
 
@@ -105,24 +126,59 @@ class ClassifiedByFC(base):
         self.train_loss_info()
 
 
-def train_and_test_fc():
-    fc = ClassifiedByFC('FC')
+def train_and_test_GoogLeNetFC():
+    fc = ClassifiedByFC('GoogLeNetFC')
     fc.get_model()
     fc.load_feas()
     fc.train_model()
     fc.train_info()
-    fc.classfiy()
+    fc.classifiy()
     fc.evaluting()
 
 
-def test_fc():
-    fc = ClassifiedByFC('FC')
+def test_GoogLeNetFC():
+    fc = ClassifiedByFC('GoogLeNetFC')
     fc.load_model()
     fc.load_feas()
-    fc.classfiy()
+    fc.classifiy()
+    fc.evaluting()
+
+
+def train_and_test_VGGFC():
+    fc = ClassifiedByFC('VGGFC')
+    fc.get_model()
+    fc.load_feas()
+    fc.train_model()
+    fc.train_info()
+    fc.classifiy()
+    fc.evaluting()
+
+
+def test_VGGFC():
+    fc = ClassifiedByFC('VGGFC')
+    fc.load_model()
+    fc.load_feas()
+    fc.classifiy()
     fc.evaluting()
 
 
 if __name__ == '__main__':
-    test_fc()
+    start = time.time()
+    train_and_test_GoogLeNetFC()
+    end = time.time()
+    used_time = int(end - start)
+    print('GoogLeNetFC使用时间是 %d 分, %d 秒.'%(used_time/60, used_time%60))
 
+    start = time.time()
+    train_and_test_VGGFC()
+    end = time.time()
+    used_time = int(end - start)
+    print('VGGFC使用时间是 %d 分, %d 秒.'%(used_time/60, used_time%60))
+
+'''
+图像分类的accuracy: 100.00%
+GoogLeNetFC使用时间是 0 分, 26 秒.
+
+图像分类的accuracy: 100.00%
+VGGFC使用时间是 0 分, 57秒.
+'''

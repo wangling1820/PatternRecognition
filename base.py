@@ -7,20 +7,25 @@ class base(object):
     def __init__(self, type):
         self.unknown_folder = './unknown/'
         self.known_folder = './known/'
-        TYPE = ['RGB', 'HSV', 'GoogleNet', 'VGG', 'FC']
-        if type not in TYPE:
-            raise RuntimeError('classified_by_tradition:输入的参数:type无效!')
+        __TYPE = ['RGB', 'HSV', 'GoogLeNet', 'VGG', 'GoogLeNetFC', 'VGGFC']
+        if type not in __TYPE:
+            raise RuntimeError('输入的参数:type无效!')
         self.type = type
         self.root_dir = os.path.join(os.getcwd(), type)
+        feas_dir = self.root_dir
 
-        if not os.path.isdir(self.root_dir):
+        # 此处是为了直接使用GoogLeNet和VGG提取的特征
+        if type in ['GoogLeNetFC', 'VGGFC']:
+                    feas_dir = os.path.join(os.getcwd(), type[:-2])
+
+        if not os.path.exists(self.root_dir):
             os.mkdir(self.root_dir)
+        
+        self.unknown_feas_dir = os.path.join(feas_dir, 'unknown_feas.npy')
+        self.unknown_labels_dir = os.path.join(feas_dir, 'unknown_labels.npy')
 
-        self.unknown_feas_dir = os.path.join(self.root_dir, 'unknown_feas.npy')
-        self.unknown_labels_dir = os.path.join(self.root_dir, 'unknown_labels.npy')
-
-        self.known_feas_dir = os.path.join(self.root_dir, 'known_feas.npy')
-        self.known_labels_dir = os.path.join(self.root_dir, 'known_labels.npy')
+        self.known_feas_dir = os.path.join(feas_dir, 'known_feas.npy')
+        self.known_labels_dir = os.path.join(feas_dir, 'known_labels.npy')
 
   
     def load_feas(self):
@@ -64,4 +69,5 @@ class base(object):
         for key in self.error_ratio.keys():
             print('K = %d 时的分类错误率为 %0.4f'%(key, self.error_ratio[key]), end=' ')
             print('K = %d 时的分类正确率为 %0.4f'%(key, 1 - self.error_ratio[key]))
+
 
