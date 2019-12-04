@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from keras.models import load_model 
 from keras import optimizers
 from keras.layers import Dropout
-
+from matplotlib.ticker import FuncFormatter
 
 from base import base
 from classified_by_models import ClassifiedByModels
@@ -74,13 +74,13 @@ class ClassifiedByFC(base):
             self.model.summary()
 
 
-    def train_model(self, epochs=10, batch_size=8, validation_split=0.1):
-        if self.type is 'GoogLeNet':
+    def train_model(self):
+        if self.type is 'GoogLeNetFC':
             self.history = self.model.fit(x=self.known_feas, y=self.known_labels, 
-                batch_size=8, epochs=10, validation_split=0.1, shuffle=True)
-        else:
+                batch_size=256, epochs=15, validation_split=0.1, shuffle=True)
+        elif self.type is 'VGGFC':
             self.history = self.model.fit(x=self.known_feas, y=self.known_labels, 
-                batch_size=32, epochs=10, validation_split=0.1, shuffle=True)
+                epochs=20, batch_size=8, validation_split=0.1, shuffle=True)
 
 
     def classifiy(self):
@@ -97,28 +97,44 @@ class ClassifiedByFC(base):
         self.model = load_model(model_weight)
 
 
+    def num_2_percent(self, temp, pos):
+        return '%1.00f' % (temp*100) + '%'
+
     def train_acc_info(self):
         x = np.arange(1, len(self.history.history['accuracy'])+1)
-        plt.plot(x, self.history.history['accuracy'])
-        plt.plot(x, self.history.history['val_accuracy'])
-        plt.legend(['acc', 'val_acc'])
+        y = np.arange(11)
+        y = y * 0.1
+        plt.plot(x, self.history.history['accuracy'], color='r')
+        plt.plot(x, self.history.history['val_accuracy'], color='b',linestyle='--')
+        plt.legend(['train', 'validation'])
         plt.grid(True)
         plt.grid(color='r', alpha=0.4, linestyle='--')
-        plt.title('accuracy')
-        # plt.show()
+        plt.title('Model Accuracy', fontsize=15)
+        plt.xlabel('Epoch', fontsize=15)
+        plt.ylabel('Accuracy', fontsize=15)
+        plt.yticks(y)
+        plt.xticks(x)
+        plt.gca().yaxis.set_major_formatter(FuncFormatter(self.num_2_percent))
+        
+        plt.show()
         plt.savefig(self.tainning_acc_fig)
+        plt.close()
 
 
     def train_loss_info(self):
         x = np.arange(1, len(self.history.history['loss'])+1)
-        plt.plot(x, self.history.history['loss'])
-        plt.plot(x, self.history.history['val_loss'])
-        plt.legend(['loss', 'val_loss'])
+        plt.plot(x, self.history.history['loss'], color='r')
+        plt.plot(x, self.history.history['val_loss'], color='b',linestyle='--')
+        plt.legend(['train', 'validation'])
         plt.grid(True)
         plt.grid(color='r', alpha=0.4, linestyle='--')
-        plt.title('loss')
-        # plt.show() 
+        plt.title('Model Loss', fontsize=15)
+        plt.xlabel('Epoch', fontsize=15)
+        plt.ylabel('Loss', fontsize=15)
+        plt.xticks(x)
+        plt.show() 
         plt.savefig(self.tainning_loss_fig)
+        plt.close()
 
 
     def train_info(self):
@@ -163,17 +179,19 @@ def test_VGGFC():
 
 
 if __name__ == '__main__':
+    '''
     start = time.time()
     train_and_test_GoogLeNetFC()
     end = time.time()
     used_time = int(end - start)
     print('GoogLeNetFC使用时间是 %d 分, %d 秒.'%(used_time/60, used_time%60))
-
+'''
     start = time.time()
     train_and_test_VGGFC()
     end = time.time()
     used_time = int(end - start)
     print('VGGFC使用时间是 %d 分, %d 秒.'%(used_time/60, used_time%60))
+
 
 '''
 图像分类的accuracy: 100.00%
