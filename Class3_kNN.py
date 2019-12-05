@@ -21,7 +21,7 @@ for step, (x_test, y_test) in enumerate(test_loader):
     min_y = -1
 
     for step1, (x_train, y_train) in enumerate(train_loader):
-        print('in line: ', step, x_train.size(), y_train.size())
+        # print('in line: ', step, x_train.size(), y_train.size())
         x_train = x_train.reshape(-1)
 
         cur_dis = np.abs(x_train - x_test)
@@ -35,6 +35,6 @@ for step, (x_test, y_test) in enumerate(test_loader):
 
     if y_test == min_y:
         right_num += 1
-    print(y_test, min_y)
+    # print(y_test, min_y)
 
 print(100.0 * right_num / len(test_set), r'%')

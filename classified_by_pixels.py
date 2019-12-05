@@ -4,7 +4,6 @@ import time
 
 import cv2
 import numpy as np
-from sklearn import preprocessing
 from scipy.spatial.distance import cdist
 
 from base import base

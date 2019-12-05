@@ -2,7 +2,7 @@ import os
 import cv2
 import operator
 import numpy as np
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist\
 class base(object):
     def __init__(self, type):
         self.unknown_folder = './unknown/'
